@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>e-Shielded | Meeting</title>
+    <link rel="stylesheet" href="/style.css" />
+    <link
+      href="https://unpkg.com/tailwindcss@^1.0/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://site-assets.fontawesome.com/releases/v6.2.1/css/all.css"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.59.0/codemirror.min.css"
+      integrity="sha512-MWdvo/Qqcf4pY1ecQUB1uBn0qLp19U/qJ1Rpp2BDZeuBA7YsFEwkvqR/+aG4BroPiAYDunKJ6X8R/Pmdt3p7oA=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.59.0/theme/material-ocean.min.css"
+      integrity="sha512-xnXUcKmu3IdmmVxfIXJY+xn8bgBeggapGLgu8nrMWt6tAXzMKCgMgJ7cEHwS2Z1vv0U1j2ZC6SmLQk+v6iiXtw=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.59.0/codemirror.min.js"
+      integrity="sha512-guAOPzMlYhWXne9TpfFRWD7iI0YnDTVqNN8fNgZGeqcmZFuUKWxD1/74Rsse81voD2uzxyBJkkp97G/tahKipg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.59.0/mode/clike/clike.min.js"
+      integrity="sha512-ipYOW38nHWkd5HgeKxdGd+7zft6CTWXXBtXxfmrJm+xOgcYTnV2RnHtfrtXDwjlxRRLL+e163/V8A/H9g8G+JQ=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.59.0/addon/display/autorefresh.min.js"
+      integrity="sha512-vAsKB7xXQAWMn5kcwda0HkFVKUxSYwrmrGprVhmbGFNAG1Ij+2epT3zzdwjHTJyDsKXsiEdrUdhIxh7loHyX+A=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.59.0/addon/edit/closebrackets.min.js"
+      integrity="sha512-B+mNfayB2LLir8I9Dy+0F2JTkRB9JxNC6+lHRo48ni7MRNe/U6pH7JfDy8zuI28AHYKMHi7/nylf3rOEGl9HFA=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
+    <script>
+      const ROOM_ID = "<%= roomId %>";
+    </script>
+  </head>
+  <body id="body" class="bg-gray-100">
+    <!-- Mobile message -->
+    <div
+      class="md:hidden flex items-center justify-center h-screen bg-gradient-to-r from-purple-500 to-indigo-600 text-white p-4 text-center"
+    >
+      Please join from a Laptop or Desktop for the best experience
+    </div>
+
+    <!-- Desktop view -->
+    <div id="meetingWrapper" class="h-screen hidden md:block">
+      <div class="flex h-screen">
+        <div class="flex-1 flex flex-col overflow-hidden">
+          <header
+            class="flex justify-between items-center p-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg"
+          >
+            <div class="flex items-center">
+              <svg class="w-8 h-8" viewBox="0 0 194 116" fill="currentColor">
+                <g fill-rule="evenodd">
+                  <path
+                    d="M96.869 0L30 116h104l-9.88-17.134H59.64l47.109-81.736zM0 116h19.831L77 17.135 67.088 0z"
+                  />
+                  <path
+                    d="M87 68.732l9.926 17.143 29.893-51.59L174.15 116H194L126.817 0z"
+                  />
+                </g>
+              </svg>
+              <h1 class="text-xl ml-2 font-bold text-white">e-Shielded</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+              <button
+                id="menu"
+                class="text-white hover:text-purple-200 transition-colors"
+              >
+                <i class="fa-solid fa-bars text-xl"></i>
+              </button>
+            </div>
+          </header>
+
+          <div class="flex h-full overflow-auto bg-gray-50">
+            <main
+              id="mainContent"
+              class="flex flex-col w-3/4 h-full overflow-hidden transition-all duration-500"
+            >
+              <div class="flex w-full h-full">
+                <!-- Editor section -->
+                <div
+                  class="flex-1 flex flex-col bg-gray-800 h-full border-r border-gray-700"
+                >
+                  <div class="h-full flex flex-col">
+                    <!-- Code editor -->
+                    <div class="flex-1 overflow-hidden">
+                      <div id="editor" class="w-full h-full"></div>
+                    </div>
+
+                    <!-- Input/Output section -->
+                    <div class="border-t border-gray-700">
+                      <div class="bg-gray-900 p-2 flex items-center">
+                        <h3 class="text-gray-300 font-medium">Input</h3>
+                      </div>
+                      <div
+                        id="input"
+                        class="w-full"
+                        style="height: 150px"
+                      ></div>
+                    </div>
+
+                    <div class="border-t border-gray-700">
+                      <div class="bg-gray-900 p-2 flex items-center">
+                        <h3 class="text-gray-300 font-medium">Output</h3>
+                      </div>
+                      <div
+                        id="output"
+                        class="w-full"
+                        style="height: 150px"
+                      ></div>
+                    </div>
+                  </div>
+
+                  <!-- Control buttons -->
+                  <div
+                    class="bg-gray-900 p-3 flex justify-between items-center border-t border-gray-700"
+                  >
+                    <div class="flex space-x-2">
+                      <button
+                        id="inviteButton"
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-md transition-colors flex items-center"
+                      >
+                        <i class="fas fa-share-alt mr-2"></i> Share
+                      </button>
+                      <button
+                        id="compile"
+                        class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md transition-colors flex items-center"
+                      >
+                        <i class="fas fa-play mr-2"></i> Run
+                      </button>
+                      <select
+                        id="language-select"
+                        class="bg-gray-700 hover:bg-gray-600 text-white py-2 px-3 rounded-md transition-colors border border-gray-600"
+                      >
+                        <option value="python">Python 3</option>
+                        <option value="php">PHP</option>
+                        <option value="c_cpp">C++</option>
+                        <option value="c">C</option>
+                        <option value="csharp">C#</option>
+                        <option value="kotlin">Kotlin</option>
+                        <option value="golang">Go</option>
+                        <option value="r">R</option>
+                        <option value="java">Java</option>
+                        <option value="typescript">TypeScript</option>
+                        <option value="nodejs">Node.js</option>
+                        <option value="ruby">Ruby</option>
+                        <option value="perl">Perl</option>
+                        <option value="swift">Swift</option>
+                        <option value="fortran">Fortran</option>
+                        <option value="bash">Bash</option>
+                      </select>
+                    </div>
+
+                    <div class="flex space-x-3">
+                      <button
+                        id="micBtn"
+                        class="p-3 rounded-full bg-gray-700 hover:bg-gray-600 text-white transition-colors"
+                      >
+                        <i class="fa-solid fa-microphone"></i>
+                      </button>
+                      <button
+                        id="videoBtn"
+                        class="p-3 rounded-full bg-gray-700 hover:bg-gray-600 text-white transition-colors"
+                      >
+                        <i class="fa-solid fa-video"></i>
+                      </button>
+                      <button
+                        id="endBtn"
+                        class="p-3 rounded-full bg-red-600 hover:bg-red-700 text-white transition-colors"
+                      >
+                        <a href="/feedback"
+                          ><i class="fa-solid fa-phone"></i
+                        ></a>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Video grid -->
+                <div
+                  class="w-1/4 bg-gray-900 h-full overflow-hidden flex flex-col"
+                >
+                  <div class="p-2 bg-gray-800 border-b border-gray-700">
+                    <h3 class="text-gray-300 font-medium">Participants</h3>
+                  </div>
+                  <div id="video-grid" class="flex-1 p-2 overflow-y-auto"></div>
+                </div>
+              </div>
+            </main>
+
+            <!-- Chat sidebar -->
+            <nav
+              id="sidebar"
+              class="w-1/4 h-full bg-gray-800 border-l border-gray-700 transition-all duration-500 flex flex-col"
+            >
+              <div class="p-3 bg-gray-900 border-b border-gray-700">
+                <h3 class="text-gray-300 font-medium">Chat</h3>
+              </div>
+              <div id="messages" class="flex-1 p-4 overflow-y-auto"></div>
+              <div class="p-3 bg-gray-900 border-t border-gray-700">
+                <div class="flex items-center">
+                  <input
+                    id="chat_message"
+                    class="flex-1 bg-gray-700 text-white rounded-l-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    type="text"
+                    placeholder="Type your message..."
+                  />
+                  <button
+                    id="send"
+                    class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-r-lg transition-colors"
+                  >
+                    <i class="fa-solid fa-paper-plane"></i>
+                  </button>
+                </div>
+              </div>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <style>
+      .CodeMirror {
+        font-size: 14px;
+        height: 100%;
+      }
+
+      #editor,
+      #input,
+      #output {
+        height: 100%;
+      }
+
+      #video-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      #video-grid video {
+        width: 100%;
+        border-radius: 8px;
+        background: #2d3748;
+        aspect-ratio: 16/9;
+      }
+
+      /* Chat messages styling */
+      .message {
+        margin-bottom: 12px;
+        max-width: 80%;
+      }
+
+      .received {
+        align-self: flex-start;
+      }
+
+      .sent {
+        align-self: flex-end;
+      }
+
+      .received .message-content {
+        background: #4a5568;
+        color: white;
+        border-radius: 0 12px 12px 12px;
+        padding: 10px 14px;
+      }
+
+      .sent .message-content {
+        background: #6b46c1;
+        color: white;
+        border-radius: 12px 0 12px 12px;
+        padding: 10px 14px;
+      }
+
+      .message-sender {
+        font-size: 0.75rem;
+        color: #a0aec0;
+        margin-bottom: 2px;
+      }
+
+      /* Scrollbar styling */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: linear-gradient(13deg, #7bcfeb 14%, #e685d3 64%);
+        border-radius: 10px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(13deg, #c7ceff 14%, #f9d4ff 64%);
+      }
+
+      ::-webkit-scrollbar-track {
+        background: #2d3748;
+        border-radius: 10px;
+      }
+    </style>
+    <script src="meeting.js"></script>
+  </body>
+</html>
